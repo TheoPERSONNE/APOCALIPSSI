@@ -41,6 +41,10 @@
 
 2. **Installer les dépendances**
    ```bash
+   # Option 1: Installation via requirements.txt (recommandé)
+   pip install -r requirements.txt
+   
+   # Option 2: Installation manuelle
    pip install fastapi uvicorn transformers PyMuPDF python-multipart
    ```
 
