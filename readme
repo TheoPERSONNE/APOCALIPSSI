@@ -83,7 +83,7 @@ flask run  # ou node app.js
 ```
 ComplySummarize-IA/
 ├── frontend/        # Application React ou Vue
-├── backend/         # API Flask ou Node.js
+├── backend/         # API Node.js
 ├── docs/            # Documents de projet
 └── README.md
 ```
