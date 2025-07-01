@@ -5,6 +5,9 @@ import io
 import fitz  # PyMuPDF
 import os
 import tempfile
+import logging
+from datetime import datetime
+import json
 
 # Charger le modèle de résumé
 summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
@@ -48,6 +51,62 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT",
     },
 )
+
+# Configuration du système de logging
+def setup_logging():
+    """Configure le système de logging pour l'API"""
+    
+    # Obtenir le répertoire du script actuel
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    logs_dir = os.path.join(script_dir, "logs")
+    
+    # Créer le dossier logs s'il n'existe pas
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+    
+    # Configuration du logger principal
+    logger = logging.getLogger("pdf_summarizer_api")
+    logger.setLevel(logging.INFO)
+    
+    # Éviter les doublons de handlers
+    if logger.handlers:
+        logger.handlers.clear()
+    
+    # Formatter pour les logs
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Handler pour fichier (logs détaillés)
+    log_file_path = os.path.join(logs_dir, f"api_{datetime.now().strftime('%Y%m%d')}.log")
+    file_handler = logging.FileHandler(
+        log_file_path,
+        encoding='utf-8'
+    )
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    
+    # Handler pour console (logs essentiels)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.WARNING)
+    console_handler.setFormatter(formatter)
+    
+    # Ajouter les handlers au logger
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    
+    # Log du chemin du fichier de log
+    print(f"📁 Logs seront sauvegardés dans: {log_file_path}")
+    
+    return logger
+
+# Initialiser le logging
+logger = setup_logging()
+
+# Log de démarrage de l'API
+logger.info("🚀 Démarrage de l'API de résumé PDF")
+logger.info(f"📦 Chargement du modèle BART en cours...")
 
 def split_text_into_chunks(text, max_length=500):
     """
@@ -221,42 +280,75 @@ async def summarize_pdf(
         media_type="application/pdf"
     )
 ):
-    # Validation du type de fichier
-    if not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(
-            status_code=400, 
-            detail="Le fichier doit être un PDF (.pdf)"
-        )
-    
-    # Validation de la taille du fichier (10 MB max)
-    contents = await file.read()
-    if len(contents) > 10 * 1024 * 1024:  # 10 MB en bytes
-        raise HTTPException(
-            status_code=400,
-            detail="Le fichier PDF ne doit pas dépasser 10 MB"
-        )
-    
-    # Créer un fichier temporaire pour le PDF
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        temp_file.write(contents)
-        temp_pdf_path = temp_file.name
+    start_time = datetime.now()
+    logger.info(f"📄 Nouvelle demande de résumé PDF - Fichier: {file.filename}")
     
     try:
-        # Extraire le texte du PDF
-        text = extract_text_from_pdf(temp_pdf_path)
+        # Validation du type de fichier
+        if not file.filename.lower().endswith('.pdf'):
+            logger.warning(f"❌ Type de fichier invalide: {file.filename}")
+            raise HTTPException(
+                status_code=400, 
+                detail="Le fichier doit être un PDF (.pdf)"
+            )
         
-        # Vérifier si du texte a été extrait
-        if not text.strip():
-            return {"summary": "Aucun texte trouvé dans le PDF."}
+        # Validation de la taille du fichier (10 MB max)
+        contents = await file.read()
+        file_size_mb = len(contents) / (1024 * 1024)
+        logger.info(f"📊 Taille du fichier: {file_size_mb:.2f} MB")
         
-        # Résumer le texte avec gestion des textes longs
-        summary = summarize_long_text(text)
-        return {"summary": summary}
+        if len(contents) > 10 * 1024 * 1024:  # 10 MB en bytes
+            logger.warning(f"❌ Fichier trop volumineux: {file_size_mb:.2f} MB")
+            raise HTTPException(
+                status_code=400,
+                detail="Le fichier PDF ne doit pas dépasser 10 MB"
+            )
+        
+        # Créer un fichier temporaire pour le PDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(contents)
+            temp_pdf_path = temp_file.name
+        
+        logger.info(f"💾 Fichier temporaire créé: {temp_pdf_path}")
+        
+        try:
+            # Extraire le texte du PDF
+            logger.info("🔍 Extraction du texte en cours...")
+            text = extract_text_from_pdf(temp_pdf_path)
+            
+            # Vérifier si du texte a été extrait
+            if not text.strip():
+                logger.warning("⚠️ Aucun texte trouvé dans le PDF")
+                return {"summary": "Aucun texte trouvé dans le PDF."}
+            
+            word_count = len(text.split())
+            logger.info(f"📝 Texte extrait: {word_count} mots")
+            
+            # Résumer le texte avec gestion des textes longs
+            logger.info("🧠 Génération du résumé en cours...")
+            summary = summarize_long_text(text)
+            
+            # Calculer le temps de traitement
+            processing_time = (datetime.now() - start_time).total_seconds()
+            
+            logger.info(f"✅ Résumé généré avec succès en {processing_time:.2f}s")
+            logger.info(f"📊 Résumé: {len(summary.split())} mots")
+            
+            return {"summary": summary}
+        
+        finally:
+            # Nettoyer le fichier temporaire
+            if os.path.exists(temp_pdf_path):
+                os.unlink(temp_pdf_path)
+                logger.info(f"🧹 Fichier temporaire supprimé: {temp_pdf_path}")
     
-    finally:
-        # Nettoyer le fichier temporaire
-        if os.path.exists(temp_pdf_path):
-            os.unlink(temp_pdf_path)
+    except HTTPException as e:
+        # Les erreurs HTTP sont déjà loggées plus haut
+        raise e
+    except Exception as e:
+        processing_time = (datetime.now() - start_time).total_seconds()
+        logger.error(f"💥 Erreur inattendue après {processing_time:.2f}s: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur interne: {str(e)}")
 
 @app.get(
     "/",
@@ -268,6 +360,7 @@ async def root():
     """
     Point d'entrée principal de l'API avec informations de base.
     """
+    logger.info("🏠 Accès à la page d'accueil de l'API")
     return {
         "message": "🚀 API de Résumé PDF - Intelligence Artificielle",
         "version": "1.0.0",
@@ -295,16 +388,20 @@ async def health_check():
     """
     Vérification de l'état de santé de l'API et de ses dépendances.
     """
+    logger.info("🔍 Vérification de l'état de santé de l'API")
+    
     try:
         # Test simple du modèle
         test_summary = summarizer("This is a test.", max_length=10, min_length=5, do_sample=False)
         model_status = "✅ Opérationnel"
+        logger.info("✅ Test du modèle BART réussi")
     except Exception as e:
         model_status = f"❌ Erreur: {str(e)}"
+        logger.error(f"❌ Erreur lors du test du modèle: {str(e)}")
     
-    return {
+    health_response = {
         "status": "🟢 Service en ligne",
-        "timestamp": "2025-07-01T00:00:00Z",
+        "timestamp": datetime.now().isoformat(),
         "model_status": model_status,
         "dependencies": {
             "FastAPI": "✅ Opérationnel",
@@ -312,7 +409,14 @@ async def health_check():
             "Transformers": "✅ Opérationnel"
         }
     }
+    
+    logger.info(f"🔍 État de santé: {health_response['status']}")
+    return health_response
 
 if __name__ == "__main__":
+    logger.info("🚀 Lancement du serveur uvicorn")
+    logger.info("📍 URL: http://0.0.0.0:8000")
+    logger.info("📖 Documentation: http://0.0.0.0:8000/docs")
+    
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
