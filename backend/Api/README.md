@@ -275,18 +275,29 @@ pip install PyMuPDF
 - Les images scannées ne sont pas supportées
 
 ### Logs et monitoring
-L'API génère automatiquement des logs détaillés :
+L'API génère automatiquement des logs détaillés avec deux phases de logging :
 
-**📂 Emplacement des logs :**
+**� Phase de démarrage :**
+1. **Messages console** (`print`) pendant le chargement du modèle
+2. **Logs fichier** après initialisation du système de logging
+3. **Validation automatique** du modèle avec `log_model_loading_status()`
+
+**�📂 Emplacement des logs :**
 ```
 Api/logs/api_YYYYMMDD.log
 ```
 
 **📋 Contenu des logs :**
-- Démarrages et arrêts de l'API
-- Requêtes de résumé avec détails (nom fichier, taille, temps de traitement)
-- Erreurs et avertissements
-- Tests de santé du système
+- **Démarrage** : Chargement et validation du modèle BART
+- **Requêtes** : Résumé avec détails (nom fichier, taille, temps de traitement)
+- **Santé** : Tests de fonctionnement du modèle et des dépendances
+- **Erreurs** : Avertissements et erreurs détaillées
+- **Performance** : Métriques de temps de traitement
+
+**🔍 Fonctions de logging :**
+- `check_and_load_model()` : Messages console pendant le chargement initial
+- `log_model_loading_status()` : Validation et logging du modèle dans les fichiers
+- `setup_logging()` : Configuration du système de logs quotidiens
 
 **🔍 Consultation des logs :**
 - **Via l'API** : `GET /logs?lines=100`
@@ -303,6 +314,28 @@ tail -f logs/api_$(date +%Y%m%d).log
 ```
 
 ## 🔍 Exemples de logs
+
+**🚀 Log de démarrage complet :**
+```
+🚀 Initialisation de l'API de résumé PDF...
+📦 Chargement du modèle d'intelligence artificielle...
+🔍 Vérification de la disponibilité du modèle facebook/bart-large-cnn...
+⏳ Chargement en cours... (peut prendre plusieurs minutes lors du premier démarrage)
+✅ Modèle facebook/bart-large-cnn chargé avec succès!
+📦 Le modèle est maintenant disponible localement pour les futures utilisations.
+🧪 Test de fonctionnement du modèle...
+✅ Test du modèle réussi!
+📝 Exemple de résumé généré: 'L'intelligence artificielle transforme notre façon...'
+🚀 Le modèle est prêt à traiter vos documents PDF!
+📁 Logs seront sauvegardés dans: C:\...\logs\api_20250701.log
+
+2025-07-01 15:30:15 - pdf_summarizer_api - INFO - 🚀 Démarrage de l'API de résumé PDF
+2025-07-01 15:30:15 - pdf_summarizer_api - INFO - 📦 Chargement du modèle BART en cours...
+2025-07-01 15:30:15 - pdf_summarizer_api - INFO - 📦 Modèle facebook/bart-large-cnn chargé et vérifié avec succès
+2025-07-01 15:30:15 - pdf_summarizer_api - INFO - 🚀 API prête à traiter les documents PDF
+2025-07-01 15:30:15 - pdf_summarizer_api - INFO - ✅ Test post-initialisation du modèle réussi
+2025-07-01 15:30:15 - pdf_summarizer_api - INFO - 📝 Modèle opérationnel et prêt pour les requêtes
+```
 
 **📝 Log d'une requête réussie :**
 ```
@@ -379,6 +412,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 - [ ] Interface web dédiée
 - [ ] Support des PDF scannés (OCR)
 - [x] **Système de logs avancé** ✅
+- [x] **Validation automatique du modèle au démarrage** ✅
 - [ ] Dashboard de monitoring en temps réel
 - [ ] Métriques de performance détaillées
 

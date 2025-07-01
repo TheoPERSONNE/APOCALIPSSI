@@ -20,6 +20,7 @@ def check_and_load_model():
     
     try:
         print(f"🔍 Vérification de la disponibilité du modèle {model_name}...")
+        # Note: logger n'est pas encore initialisé à ce stade, on utilisera print pour l'affichage console
         
         # Essayer de charger le modèle (cela le téléchargera automatiquement s'il n'est pas présent)
         print("⏳ Chargement en cours... (peut prendre plusieurs minutes lors du premier démarrage)")
@@ -54,6 +55,29 @@ def check_and_load_model():
         print("   • Libérez de l'espace disque (minimum 2 GB recommandés)")
         print("   • Relancez l'API après résolution du problème")
         raise e
+
+def log_model_loading_status(logger, summarizer, model_name):
+    """
+    Enregistre dans les logs l'état du chargement du modèle.
+    Cette fonction est appelée après l'initialisation du logger.
+    """
+    try:
+        logger.info(f"📦 Modèle {model_name} chargé et vérifié avec succès")
+        logger.info("🚀 API prête à traiter les documents PDF")
+        
+        # Test rapide pour vérifier que le modèle fonctionne dans les logs
+        test_text = "Test de fonctionnement du modèle pour les logs."
+        test_result = summarizer(test_text, max_length=15, min_length=5, do_sample=False)
+        
+        if test_result and len(test_result) > 0:
+            logger.info(f"✅ Test post-initialisation du modèle réussi")
+            logger.info(f"📝 Modèle opérationnel et prêt pour les requêtes")
+        else:
+            logger.warning("⚠️ Test post-initialisation du modèle - résultat inattendu")
+            
+    except Exception as e:
+        logger.error(f"❌ Erreur lors du test post-initialisation du modèle: {str(e)}")
+        logger.warning("⚠️ Le modèle pourrait ne pas fonctionner correctement")
 
 # Charger et vérifier le modèle de résumé au démarrage
 print("🚀 Initialisation de l'API de résumé PDF...")
@@ -155,6 +179,9 @@ logger = setup_logging()
 # Log de démarrage de l'API
 logger.info("🚀 Démarrage de l'API de résumé PDF")
 logger.info(f"📦 Chargement du modèle BART en cours...")
+
+# Logger le statut du modèle maintenant que le logger est initialisé
+log_model_loading_status(logger, summarizer, "facebook/bart-large-cnn")
 
 def split_text_into_chunks(text, max_length=500):
     """
