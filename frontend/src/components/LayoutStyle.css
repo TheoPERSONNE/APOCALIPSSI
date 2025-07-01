@@ -1,0 +1,97 @@
+.layout-app {
+    min-height: 100vh;
+    position: relative;
+}
+
+.layout-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: transparent;
+    z-index: 10;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.layout-time {
+    flex: 1;
+}
+
+.layout-status {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.layout-user-avatar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    cursor: pointer;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.layout-background {
+    min-height: 100vh;
+    background: linear-gradient(135deg,
+    rgba(147, 197, 253, 0.8) 0%,
+    rgba(196, 181, 253, 0.8) 50%,
+    rgba(244, 114, 182, 0.8) 100%
+    );
+    background-image: url('../assets/images/tache.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.layout-container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 40px);
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px 35px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.main-card {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 20px;
+    padding: 40px 30px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    width: 100%;
+}
