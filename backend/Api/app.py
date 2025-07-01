@@ -9,8 +9,56 @@ import logging
 from datetime import datetime
 import json
 
-# Charger le modèle de résumé
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+def check_and_load_model():
+    """
+    Vérifie si le modèle BART est disponible localement et le télécharge si nécessaire.
+    
+    Returns:
+        pipeline: Le pipeline de résumé configuré
+    """
+    model_name = "facebook/bart-large-cnn"
+    
+    try:
+        print(f"🔍 Vérification de la disponibilité du modèle {model_name}...")
+        
+        # Essayer de charger le modèle (cela le téléchargera automatiquement s'il n'est pas présent)
+        print("⏳ Chargement en cours... (peut prendre plusieurs minutes lors du premier démarrage)")
+        summarizer = pipeline("summarization", model=model_name)
+        
+        print(f"✅ Modèle {model_name} chargé avec succès!")
+        print(f"📦 Le modèle est maintenant disponible localement pour les futures utilisations.")
+        
+        # Test rapide du modèle avec un texte en français
+        test_text = "L'intelligence artificielle transforme notre façon de travailler et d'interagir avec la technologie. Cette révolution technologique offre de nombreuses opportunités mais soulève aussi des questions importantes sur l'avenir du travail."
+        print("🧪 Test de fonctionnement du modèle...")
+        test_result = summarizer(test_text, max_length=30, min_length=10, do_sample=False)
+        
+        if test_result and len(test_result) > 0:
+            print(f"✅ Test du modèle réussi!")
+            print(f"📝 Exemple de résumé généré: '{test_result[0]['summary_text'][:100]}...'")
+            print(f"🚀 Le modèle est prêt à traiter vos documents PDF!")
+        else:
+            print("⚠️ Le test du modèle a échoué, mais le modèle est chargé.")
+        
+        return summarizer
+        
+    except Exception as e:
+        print(f"❌ Erreur lors du chargement du modèle {model_name}: {str(e)}")
+        print("💡 Causes possibles:")
+        print("   • Connexion internet insuffisante ou interrompue")
+        print("   • Espace disque insuffisant (le modèle fait environ 1.6 GB)")
+        print("   • Problème avec les dépendances PyTorch/Transformers")
+        print("   • Restrictions de sécurité réseau")
+        print(f"🔧 Solutions recommandées:")
+        print("   • Vérifiez votre connexion internet")
+        print("   • Libérez de l'espace disque (minimum 2 GB recommandés)")
+        print("   • Relancez l'API après résolution du problème")
+        raise e
+
+# Charger et vérifier le modèle de résumé au démarrage
+print("🚀 Initialisation de l'API de résumé PDF...")
+print("📦 Chargement du modèle d'intelligence artificielle...")
+summarizer = check_and_load_model()
 
 # Configuration de l'API avec métadonnées
 app = FastAPI(
