@@ -369,8 +369,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 ## 🆘 Support
 
 - **Documentation API** : `http://localhost:8000/docs`
-- **Issues** : [GitHub Issues](https://github.com/votre-repo/issues)
-- **Email** : support@example.com
+- **Email** : yendiyohann@gmail.com
 
 ## 🎯 Roadmap
 
@@ -384,5 +383,3 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 - [ ] Métriques de performance détaillées
 
 ---
-
-**Développé avec ❤️ en utilisant FastAPI et l'IA**
