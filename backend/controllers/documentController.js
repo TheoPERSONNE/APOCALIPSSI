@@ -75,6 +75,7 @@ exports.uploadDocument = [
         chemin_fichier: req.file.path
       });
 
+      
       res.status(201).json({
         message: 'Document uploadé avec succès',
         document: {

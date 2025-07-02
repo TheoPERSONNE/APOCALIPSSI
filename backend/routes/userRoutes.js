@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController')
+const userController = require('../controllers/userController');
+const { authenticateToken } = require('../middleware/auth');
 
 // Routes publiques
 router.post('/register', userController.register);
 router.post('/login', userController.login);
 
-// Routes protégées (ajout du middleware d'authentification plus tard)
-router.get('/profile', userController.getProfile);
-router.put('/profile', userController.updateProfile);
+// Routes protégées (authentification requise)
+router.get('/profile', authenticateToken, userController.getProfile);
+router.put('/profile', authenticateToken, userController.updateProfile);
 
 module.exports = router;

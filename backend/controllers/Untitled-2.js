@@ -9,23 +9,68 @@ const AI_API_URL = process.env.AI_API_URL || 'http://127.0.0.1:8000';
 
 const callAISummaryAPI = async (filePath) => {
   try {
+    console.log(`🔗 Tentative de connexion à l'API IA: ${AI_API_URL}`);
+    console.log(`📂 Chemin du fichier: ${filePath}`);
+    console.log(`📊 Fichier existe: ${fs.existsSync(filePath)}`);
+    
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Le fichier ${filePath} n'existe pas`);
+    }
+
+    // Vérifier la taille du fichier
+    const stats = fs.statSync(filePath);
+    console.log(`📦 Taille du fichier: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // Test de santé de l'API avant l'appel principal
+    try {
+      console.log(`🏥 Test de santé de l'API...`);
+      const healthCheck = await axios.get(`${AI_API_URL}/health`, { timeout: 5000 });
+      console.log('✅ API IA disponible:', healthCheck.data.status);
+    } catch (healthError) {
+      console.error('❌ Test de santé de l\'API IA échoué:', healthError.message);
+      throw new Error('API IA non disponible. Vérifiez que le service Python est démarré sur le bon port.');
+    }
+
     const form = new FormData();
     form.append('file', fs.createReadStream(filePath));
 
+    console.log(`📤 Envoi du fichier vers: ${AI_API_URL}/summarize_pdf/`);
+    console.log(`📋 Headers de la requête:`, form.getHeaders());
+    
     const response = await axios.post(`${AI_API_URL}/summarize_pdf/`, form, {
       headers: {
         ...form.getHeaders(),
       },
       timeout: 120000, // 2 minutes timeout pour l'IA
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
     });
 
+    console.log('✅ Résumé reçu de l\'API IA');
+    console.log(`📊 Statut de la réponse: ${response.status}`);
+    console.log(`📝 Taille de la réponse: ${JSON.stringify(response.data).length} caractères`);
+    
     return response.data.summary;
   } catch (error) {
+    console.error('🚨 Erreur détaillée lors de l\'appel API IA:', {
+      message: error.message,
+      code: error.code,
+      address: error.address,
+      port: error.port,
+      url: AI_API_URL,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    });
+
     if (error.response) {
-      throw new Error(`Erreur API IA: ${error.response.data.detail || error.response.data.message || 'Erreur inconnue'}`);
+      throw new Error(`Erreur API IA (${error.response.status}): ${error.response.data.detail || error.response.data.message || 'Erreur inconnue'}`);
     } else if (error.code === 'ECONNREFUSED') {
-      console.error(error);
-      throw new Error('API IA non disponible. Vérifiez que le service Python est démarré.');
+      throw new Error(`API IA non disponible sur ${AI_API_URL}. Vérifiez que le service Python est démarré et accessible.`);
+    } else if (error.code === 'ENOTFOUND') {
+      throw new Error(`Impossible de résoudre l'adresse ${AI_API_URL}. Vérifiez la configuration AI_API_URL.`);
+    } else if (error.code === 'ETIMEDOUT') {
+      throw new Error('Timeout lors de l\'appel à l\'API IA. Le traitement prend trop de temps.');
     } else {
       throw new Error(`Erreur lors de l'appel à l'API IA: ${error.message}`);
     }

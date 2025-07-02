@@ -61,11 +61,75 @@ exports.login = async (req, res) => {
 };
 
 exports.getProfile = async (req, res) => {
-  // Implémentation à compléter avec middleware d'authentification
-  res.json({ message: 'Profil utilisateur' });
+  try {
+    // req.user est défini par le middleware d'authentification
+    const user = await User.findById(req.user.id).select('-mot_de_passe');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.json({
+      message: 'Profil récupéré avec succès',
+      user: {
+        id: user._id,
+        nom: user.nom,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 exports.updateProfile = async (req, res) => {
-  // Implémentation à compléter
-  res.json({ message: 'Mise à jour du profil' });
+  try {
+    const { nom, email } = req.body;
+    const userId = req.user.id;
+
+    // Vérifier si l'email est déjà utilisé par un autre utilisateur
+    if (email) {
+      const emailExists = await User.findOne({ 
+        email, 
+        _id: { $ne: userId } 
+      });
+      
+      if (emailExists) {
+        return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+      }
+    }
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { 
+        ...(nom && { nom }),
+        ...(email && { email })
+      },
+      { 
+        new: true, 
+        runValidators: true 
+      }
+    ).select('-mot_de_passe');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.json({
+      message: 'Profil mis à jour avec succès',
+      user: {
+        id: updatedUser._id,
+        nom: updatedUser.nom,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        updatedAt: updatedUser.updatedAt
+      }
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 };
