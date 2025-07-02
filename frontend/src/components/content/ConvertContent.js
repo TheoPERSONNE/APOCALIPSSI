@@ -1,5 +1,5 @@
 import React from 'react';
-import './ContentStyles.css';
+import './UploadContent.css';
 
 const ConvertContent = ({ onNavigate }) => {
     return (

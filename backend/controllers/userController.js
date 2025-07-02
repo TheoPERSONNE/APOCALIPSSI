@@ -36,10 +36,32 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, mot_de_passe } = req.body;
+    console.log('🔍 Body reçu:', req.body);
+
+    // ✅ Chercher les deux noms de champs
+    const { email, mot_de_passe, password } = req.body;
+    const motDePasse = mot_de_passe || password; // Accepter les deux
+
+    console.log('📧 Email:', email);
+    console.log('🔒 Mot de passe reçu:', motDePasse ? 'OUI' : 'NON');
+
+    if (!email || !motDePasse) {
+      return res.status(400).json({ message: 'Email et mot de passe requis' });
+    }
 
     const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(mot_de_passe))) {
+    console.log('👤 Utilisateur trouvé:', user ? `Oui (${user.email})` : 'Non');
+
+    if (!user) {
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
+    }
+
+    console.log('🔐 Hash stocké:', user.mot_de_passe ? 'OUI' : 'NON');
+
+    const isMatch = await user.comparePassword(motDePasse); // ✅ Utiliser motDePasse
+    console.log('✅ Comparaison résultat:', isMatch);
+
+    if (!isMatch) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
     }
 
@@ -56,7 +78,8 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('❌ Erreur login:', error);
+    res.status(500).json({ message: error.message });
   }
 };
 

@@ -1,23 +1,38 @@
 import React, { useState } from 'react';
-import './ContentStyles.css';
+import { useAuth } from '../../context/authContext';
+import './UploadContent.css';
 
 const LoginContent = ({ onNavigate, onLogin }) => {
     const [formData, setFormData] = useState({
         email: '',
         password: ''
     });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
+        setError('');
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Login submitted:', formData);
-        onLogin();
+        setIsLoading(true);
+        setError('');
+
+        const result = await login(formData);
+
+        if (result.success) {
+            onLogin();
+        } else {
+            setError(result.error);
+        }
+        setIsLoading(false);
     };
 
     return (
@@ -30,6 +45,12 @@ const LoginContent = ({ onNavigate, onLogin }) => {
                 </button>
             </p>
 
+            {error && (
+                <div className="error-message">
+                    {error}
+                </div>
+            )}
+
             <form className="auth-form" onSubmit={handleSubmit}>
                 <input
                     type="email"
@@ -39,6 +60,7 @@ const LoginContent = ({ onNavigate, onLogin }) => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
                 />
 
                 <input
@@ -49,10 +71,11 @@ const LoginContent = ({ onNavigate, onLogin }) => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
                 />
 
-                <button type="submit" className="auth-btn">
-                    Login
+                <button type="submit" className="auth-btn" disabled={isLoading}>
+                    {isLoading ? 'Connexion...' : 'Login'}
                 </button>
             </form>
         </div>
