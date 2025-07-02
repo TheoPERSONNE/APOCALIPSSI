@@ -1,0 +1,77 @@
+## 🔶 ENTITÉ : UTILISATEUR
+
+**Champs :**
+
+* `id_utilisateur` (PK)
+* `nom`
+* `email`
+* `mot_de_passe`
+* `rôle`
+
+**Relations :**
+
+* 1 utilisateur peut uploader 0 à n documents.
+
+---
+
+## 📄 ENTITÉ : DOCUMENT
+
+**Champs :**
+
+* `id_document` (PK)
+* `nom_fichier`
+* `type`
+* `date_upload`
+* `id_utilisateur` (FK vers `UTILISATEUR`)
+
+**Relations :**
+
+* 1 document est lié à exactement 1 utilisateur.
+* 1 document donne lieu à 1 résumé.
+
+---
+
+## 🧾 ENTITÉ : RESUME
+
+**Champs :**
+
+* `id_resume` (PK)
+* `contenu`
+* `date_generation`
+* `id_document` (FK vers `DOCUMENT`)
+
+**Relations :**
+
+* 1 résumé est lié à 1 document.
+* 1 résumé peut avoir plusieurs suggestions et plusieurs points clés.
+
+---
+
+## ✅ ENTITÉ : SUGGESTION
+
+**Champs :**
+
+* `id_suggestion` (PK)
+* `action`
+* `categorie`
+* `id_resume` (FK vers `RESUME`)
+
+**Relations :**
+
+* Plusieurs suggestions peuvent être liées à un seul résumé.
+
+---
+
+## 📌 ENTITÉ : POINT CLE
+
+**Champs :**
+
+* `id_point` (PK)
+* `texte`
+* `importance`
+* `id_resume` (FK vers `RESUME`)
+
+**Relations :**
+
+* Plusieurs points clés peuvent être liés à un même résumé.
+
